@@ -1,0 +1,18 @@
+.toolbar button {
+    min-width: 40px;
+    min-height: 40px;
+    border-radius: 5px !important;
+    cursor: pointer;
+    transition: all 100ms linear;
+    margin: 8px 4px;
+}
+.toolbar button.active {
+    background-color: deepskyblue;
+}
+.toolbar button.half-opacity {
+    color: rgba(0, 0, 0, 0.5);
+}
+
+.abcjs-note_selected {
+    fill: red;
+}
