@@ -17,55 +17,81 @@ let allPitches = [
     "c''''", "d''''", "e''''", "f''''", "g''''", "a''''", "b''''"
 ];
 
-function abcInitialize(abcStringInit = "", sheetNameInit = "sheet") {
+function abcInitialize(abcStringInit = "", sheetNameInit = "sheet", isEditor = true) {
     abcString = abcStringInit;
     sheetName = sheetNameInit;
-    draw(sheetName);
+    draw(sheetName, {}, isEditor);
 }
 
-function draw(sheetElemName, specificOptions = {}) {
+function draw(sheetElemName, specificOptions = {}, isEditor = true) {
+    // Responsive params
     let options = {
-        add_classes: true,
-        selectionColor: "red",
-        dragColor: "red",
-        clickListener: selectElement,
+        selectionColor: "black",
         wrap: {
             // minSpacing: 1,
             // maxSpacing: 2,
             // preferredMeasuresPerLine: 8
           },
-        // staffwidth: 1800,
+        staffwidth: document.querySelector(".abcjs-container").offsetWidth,
         // responsive: "resize"
     };
-    let editorMode = document.querySelector("[data-group='modes'] button.active").dataset.type;
-    if (editorMode == "sheet-edit") {
-        options.dragging = true;
-        options.selectTypes = ["note", "bar"]
-    }
-    
-    if (specificOptions) {
-        Object.assign(options, specificOptions);
-    }
 
-    abcString = abcString.replace(/ +(?= )/g,'');
-    let abcStringLines = abcString.split(/\n/);
-    if (abcStringLines[abcStringLines.length - 1] == "") {
-        abcStringLines[abcStringLines.length - 1] = "z2";
-        abcString = abcStringLines.join("\n");
+    if (!isEditor) {
+        abcVisualObj = ABCJS.renderAbc(sheetElemName, abcString, options);
+        createAudio();
+        return abcVisualObj;
     }
     else {
-        abcString = abcString.trim();
-    }
-    abcVisualObj = ABCJS.renderAbc(sheetElemName, abcString, options);
-
-    if (selectedAbcElem) {
-        setSelectionToElementFromChar(selectedAbcElem.startChar);
-    }
-
-    createAudio();
+        Object.assign(options, {
+            add_classes: true,
+            selectionColor: "red",
+            dragColor: "red",
+            clickListener: selectElement
+        });
+        let editorMode = document.querySelector("[data-group='modes'] button.active").dataset.type;
+        if (editorMode == "sheet-edit") {
+            options.dragging = true;
+            options.selectTypes = ["note", "bar"]
+        }
+        
+        if (specificOptions) {
+            Object.assign(options, specificOptions);
+        }
     
-    return abcVisualObj;
+        abcString = abcString.replace(/ +(?= )/g,'');
+        let abcStringLines = abcString.split(/\n/);
+        if (abcStringLines[abcStringLines.length - 1] == "") {
+            abcStringLines[abcStringLines.length - 1] = "z2";
+            abcString = abcStringLines.join("\n");
+        }
+        else {
+            abcString = abcString.trim();
+        }
+        abcVisualObj = ABCJS.renderAbc(sheetElemName, abcString, options);
+    
+        if (selectedAbcElem) {
+            setSelectionToElementFromChar(selectedAbcElem.startChar);
+        }
+    
+        createAudio();
+        
+        return abcVisualObj;
+    }
 }
+
+window.addEventListener('resize', function(event) {
+    let options = {
+        selectionColor: "black",
+        wrap: {
+            // minSpacing: 1,
+            // maxSpacing: 2,
+            // preferredMeasuresPerLine: 8
+          },
+        staffwidth: document.querySelector(".abcjs-container").offsetWidth,
+        // responsive: "resize"
+    };
+    abcVisualObj = ABCJS.renderAbc(sheetName, abcString, options);
+}, true);
 
 function tokenize(str) {
     let arr = str.split(/(!.+?!|".+?")/);
@@ -289,12 +315,12 @@ function changeEditorMode(btnElem) {
     selectMode = "default";
     abcElementsOfSegment = [];
     if (btnElem.dataset.type == "sheet-edit") {
-        document.querySelector("div[data-mode='clef-edit']").style.visibility = "hidden";
-        document.querySelector("div[data-mode='sheet-edit']").style.visibility = "visible";
+        document.querySelector("div[data-mode='clef-edit']").setAttribute("hidden", true);
+        document.querySelector("div[data-mode='sheet-edit']").removeAttribute("hidden");
     }
     else if (btnElem.dataset.type == "clef-edit") {
-        document.querySelector("div[data-mode='sheet-edit']").style.visibility = "hidden";
-        document.querySelector("div[data-mode='clef-edit']").style.visibility = "visible";
+        document.querySelector("div[data-mode='sheet-edit']").setAttribute("hidden", true);
+        document.querySelector("div[data-mode='clef-edit']").removeAttribute("hidden");
         let clefValue = getClefValue();
         let keySignature = abcVisualObj[0].getKeySignature();
         let keySignatureValue = keySignature.root + keySignature.acc;
@@ -479,9 +505,7 @@ function getClefValue() {
     return clefValue;
 }
 
-
-
-
+// Audio widget scripts
 function CursorControl() {
     let self = this;
 
@@ -560,7 +584,7 @@ function setTune(userAction) {
     midiBuffer.init({
         visualObj: abcVisualObj[0],
         options: {
-            soundFontUrl: "resources/soundfonts/abcjs"
+            soundFontUrl: "/resources/soundfonts/abcjs"
         }
     }).then(function (response) {
         if (synthControl) {

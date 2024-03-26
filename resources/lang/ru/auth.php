@@ -1,0 +1,28 @@
+<?php
+
+return [
+    'Login' => 'Войти',
+    'Remember Me' => 'Запомнить',
+    'Forgot Your Password?' => 'Забыли пароль?',
+    'Reset Password' => 'Сбросить пароль',
+    'Send Password Reset Link' => 'Отправить ссылку для сброса пароля',
+    'Please confirm your password before continuing.' => 'Пожалуйста подтвердите пароль перед тем как продолжить',
+    'Verify Your Email Address' => 'Подтверждение электронной почты',
+    'A fresh verification link has been sent to your email address.' => 'Ссылка для подтверждения была отправлена на вашу электронную почту.',
+    'Before proceeding, please check your email for a verification link.' => 'Прежде чем продолжить, пожалуйста, проверьте свою электронную почту на наличие ссылки для подтверждения.',
+    'If you did not receive the email' => 'Если вы не получили электронное письмо',
+    'click here to request another' => 'нажмите здесь, чтобы отправить ещё раз',
+    'Email Address' => 'Электронная почта',
+    'Password' => 'Пароль',
+    'Register' => 'Регистрация',
+    'Name' => 'Имя',
+    'Confirm Password' => 'Подтвердите пароль',
+    'reset' => 'Ваш пароль был сброшен.',
+    'sent' => 'Ссылка на сброс пароля была отправлена.',
+    'throttled' => 'Пожалуйста, подождите перед повторной попыткой.',
+    'token' => 'Ошибочный код сброса пароля.',
+    'user' => 'Не удалось найти пользователя с указанным электронным адресом.',
+    'failed' => 'Неверное имя пользователя или пароль.',
+    'password' => 'Некорректный пароль.',
+    'throttle' => 'Слишком много попыток входа. Пожалуйста, попробуйте еще раз через :seconds секунд.',
+];
