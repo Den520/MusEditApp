@@ -18,6 +18,7 @@ class CreateSheetsTable extends Migration
             $table->foreignId('user_id')->constrained('users')->onUpdate('cascade')->onDelete('cascade');
             $table->string('title')->default('');
             $table->text('content')->nullable();
+            $table->boolean('is_published')->default(0);
             $table->timestamps();
         });
     }
