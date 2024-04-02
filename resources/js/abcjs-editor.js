@@ -1,6 +1,8 @@
 let abcString;
 let sheetName;
 let abcVisualObj;
+let helpTextCurrentValue = "";
+let isEditorMode;
 let selectMode = "default";
 let selectedAbcElem;
 let abcElementsOfSegment = [];
@@ -20,28 +22,21 @@ let allPitches = [
 function abcInitialize(abcStringInit = "", sheetNameInit = "sheet", isEditor = true) {
     abcString = abcStringInit;
     sheetName = sheetNameInit;
-    draw(sheetName, {}, isEditor);
+    isEditorMode = isEditor;
+    draw(sheetName, {}, isEditorMode);
 }
 
-function draw(sheetElemName, specificOptions = {}, isEditor = true) {
-    // Responsive params
+function draw(sheetElemName, specificOptions = {}, isEditor = true, withCreateAudio = true) {
     let options = {
-        selectionColor: "black",
         wrap: {
-            // minSpacing: 1,
-            // maxSpacing: 2,
-            // preferredMeasuresPerLine: 8
-          },
-        staffwidth: document.querySelector(".abcjs-container").offsetWidth,
-        // responsive: "resize"
+            minSpacing: 2,
+            maxSpacing: 3,
+            preferredMeasuresPerLine: 8
+        },
+        staffwidth: document.getElementById("abcjs-container").offsetWidth - 54
     };
 
-    if (!isEditor) {
-        abcVisualObj = ABCJS.renderAbc(sheetElemName, abcString, options);
-        createAudio();
-        return abcVisualObj;
-    }
-    else {
+    if (isEditor) {
         Object.assign(options, {
             add_classes: true,
             selectionColor: "red",
@@ -53,10 +48,6 @@ function draw(sheetElemName, specificOptions = {}, isEditor = true) {
             options.dragging = true;
             options.selectTypes = ["note", "bar"]
         }
-        
-        if (specificOptions) {
-            Object.assign(options, specificOptions);
-        }
     
         abcString = abcString.replace(/ +(?= )/g,'');
         let abcStringLines = abcString.split(/\n/);
@@ -67,31 +58,37 @@ function draw(sheetElemName, specificOptions = {}, isEditor = true) {
         else {
             abcString = abcString.trim();
         }
-        abcVisualObj = ABCJS.renderAbc(sheetElemName, abcString, options);
-    
-        if (selectedAbcElem) {
-            setSelectionToElementFromChar(selectedAbcElem.startChar);
-        }
-    
-        createAudio();
+    }
+
+    if (specificOptions) {
+        Object.assign(options, specificOptions);
+    }
         
+    abcVisualObj = ABCJS.renderAbc(sheetElemName, abcString, options);
+    
+    if (selectedAbcElem && isEditor) {
+        setSelectionToElementFromChar(selectedAbcElem.startChar);
+    }
+
+    if (withCreateAudio) {
+        createAudio();
         return abcVisualObj;
     }
 }
 
-window.addEventListener('resize', function(event) {
-    let options = {
-        selectionColor: "black",
-        wrap: {
-            // minSpacing: 1,
-            // maxSpacing: 2,
-            // preferredMeasuresPerLine: 8
-          },
-        staffwidth: document.querySelector(".abcjs-container").offsetWidth,
-        // responsive: "resize"
-    };
-    abcVisualObj = ABCJS.renderAbc(sheetName, abcString, options);
+window.addEventListener("resize", function(event) {
+    draw(sheetName, {}, isEditorMode, false);
 }, true);
+
+function setHelpText(event) {
+    let helpTextElem = document.querySelector(".toolbar-help-text");
+    if (event.type == 'mouseover') {
+        helpTextElem.innerHTML = event.target.title;
+    }
+    if (event.type == 'mouseout') {
+        helpTextElem.innerHTML = helpTextCurrentValue;
+    }
+}
 
 function tokenize(str) {
     let arr = str.split(/(!.+?!|".+?")/);
@@ -218,7 +215,7 @@ function setSelectionToElementFromChar(startChar) {
 
 function toolbarButtonClick(btnElem) {
     setActiveToolbarButton(btnElem);
-    let btnType = btnElem.parentElement.dataset.type;
+    let btnType = btnElem.parentElement.parentElement.dataset.type;
     let newAbcElemString;
     if (btnType == "note") {
         if (selectedAbcElem) {
@@ -243,7 +240,7 @@ function toolbarButtonClick(btnElem) {
     }
     else if (btnType == "accidental") {
         if (selectedAbcElem && selectedAbcElem.pitches) {
-            newAbcElemString = btnElem.dataset.value + abcString.substring(selectedAbcElem.startChar, selectedAbcElem.endChar).replace(/[/^_=]/g, "");
+            newAbcElemString = btnElem.dataset.value + abcString.substring(selectedAbcElem.startChar, selectedAbcElem.endChar).replace(/[\^_=]/g, "");
         }
     }
     else if (btnType == "additional") {
@@ -260,7 +257,7 @@ function setActiveToolbarButton(btnElem) {
     if (!btnElem) {
         return;
     }
-    let btnGroup = btnElem.parentElement.dataset.group;
+    let btnGroup = btnElem.parentElement.parentElement.dataset.group;
     let elements = document.querySelectorAll("[data-group='" + btnGroup + "'] button");
     elements.forEach(element => {
         element.classList.remove("active");
@@ -269,7 +266,7 @@ function setActiveToolbarButton(btnElem) {
 }
 
 function removeActiveToolbarButton(btnElem) {
-    let btnGroup = btnElem.parentElement.dataset.group;
+    let btnGroup = btnElem.parentElement.parentElement.dataset.group;
     let elements = document.querySelectorAll("[data-group='" + btnGroup + "'] button");
     elements.forEach(element => {
         element.classList.remove("active");
@@ -312,8 +309,11 @@ function changeEditorMode(btnElem) {
     removeAllActiveToolbarButtons();
     setActiveToolbarButton(btnElem);
     removeElementSelection();
+    changeToolbarGroupState("enable");
     selectMode = "default";
     abcElementsOfSegment = [];
+    let helpTextElem = document.querySelector(".toolbar-help-text");
+    helpTextElem.innerHTML = helpTextCurrentValue = "";
     if (btnElem.dataset.type == "sheet-edit") {
         document.querySelector("div[data-mode='clef-edit']").setAttribute("hidden", true);
         document.querySelector("div[data-mode='sheet-edit']").removeAttribute("hidden");
@@ -336,12 +336,14 @@ function changeEditorMode(btnElem) {
 function switchBundleMode(btnElem) {
     abcElementsOfSegment = [];
     removeElementSelection();
+    let helpTextElem = document.querySelector(".toolbar-help-text");
 
     if (btnElem.classList.contains("active")) {
         selectMode = "default";
         changeToolbarGroupState("enable");
         removeActiveToolbarButton(btnElem);
         draw(sheetName);
+        helpTextElem.innerHTML = helpTextCurrentValue = "";
     }
     else {
         selectMode = "segment";
@@ -349,6 +351,7 @@ function switchBundleMode(btnElem) {
         changeToolbarGroupState("enable", ["bundles"]);
         setActiveToolbarButton(btnElem);
         draw(sheetName, {dragging: false, selectTypes: ["note"]});
+        helpTextElem.innerHTML = helpTextCurrentValue = btnElem.dataset.helpText;
     }
 }
 
@@ -365,7 +368,7 @@ function editBundle() {
         if (bundleType == "beam") {
             abcSegmentString = abcSegmentString.replace(/ /g, "");
         }
-        else if (bundleType == "tie") {
+        else if (bundleType == "slur") {
             if (abcSegmentString.endsWith(" ")) {
                 abcSegmentString = "(" + abcSegmentString.trim() + ") ";
             }
@@ -382,7 +385,7 @@ function editBundle() {
                 abcSegmentString += abcString.substring(element.startChar, element.endChar) + " ";
             });
         }
-        else if (bundleType == "tie") { //FIXME: Проверять балансировку для каждой скобки, чтобы не оставалось одной скобки
+        else if (bundleType == "slur") { // FIXME: Check the balancing for each bracket so that there is not one bracket left
             abcSegmentString = abcSegmentString.replace(/[()]/g, "");
         }
     }
@@ -394,6 +397,8 @@ function editBundle() {
     changeToolbarGroupState("enable");
     changeToolbarGroupState("disable", ["accidentals"]);
     removeActiveToolbarButton(btnElem);
+    let helpTextElem = document.querySelector(".toolbar-help-text");
+    helpTextElem.innerHTML = helpTextCurrentValue = "";
 }
 
 function getElementsFromSegment(startChar = 0, endChar = null) {
@@ -426,7 +431,7 @@ function addElement() {
         if (!btnElem) {
             return;
         }
-        let btnType = btnElem.parentElement.dataset.type;
+        let btnType = btnElem.parentElement.parentElement.dataset.type;
         let newAbcElemString;
         if (btnType == "note") {
             newAbcElemString = "A" + btnElem.dataset.duration;
@@ -464,7 +469,7 @@ function removeElement(abcElem = selectedAbcElem) {
 
 function changeClef(btnElem) {
     setActiveToolbarButton(btnElem);
-    let btnType = btnElem.parentElement.dataset.type;
+    let btnType = btnElem.parentElement.parentElement.dataset.type;
     let abcStringLines = abcString.split(/\n/);
     if (btnType == "clef") {
         let clefValue = btnElem.dataset.value;
@@ -570,14 +575,15 @@ let synthControl;
 function createAudio() {
     if (ABCJS.synth.supportsAudio()) {
         synthControl = new ABCJS.synth.SynthController();
-        synthControl.load("#audio", cursorControl, {displayLoop: true, displayRestart: true, displayPlay: true, displayProgress: true, displayWarp: true});
+        synthControl.load("#audio", cursorControl, {displayRestart: true, displayPlay: true, displayProgress: true});
     } else {
         document.querySelector("#audio").innerHTML = "<div class='audio-error'>Audio is not supported in this browser.</div>";
     }
     setTune(false);
 }
 
-function setTune(userAction) {
+function setTune(userAction, withDownload = false) {
+    let audioParams = { soundFontVolumeMultiplier: 0.5 };
     synthControl.disable(true);
 
     let midiBuffer = new ABCJS.synth.CreateSynth();
@@ -588,11 +594,37 @@ function setTune(userAction) {
         }
     }).then(function (response) {
         if (synthControl) {
-            synthControl.setTune(abcVisualObj[0], userAction).catch(function (error) {
+            synthControl.setTune(abcVisualObj[0], userAction, audioParams).then(function (response) {
+                if (withDownload) {
+                    synthControl.download(abcVisualObj[0].metaText.title);
+                }
+            }).catch(function (error) {
                 console.warn("Audio problem:", error);
             });
         }
     }).catch(function (error) {
         console.warn("Audio problem:", error);
     });
+}
+
+function exportFile(type) {
+    if (type == "midi") {
+        let midi_link_elem = document.getElementById("midi-link");
+        midi_link_elem.innerHTML = ABCJS.synth.getMidiFile(abcVisualObj[0], { midiOutputType: 'link', bpm: abcVisualObj[0].metaText.tempo.bpm, fileName: abcVisualObj[0].metaText.title });
+        document.querySelector('#midi-link .abcjs-download-midi a').click();
+        midi_link_elem.innerHTML = "";
+    }
+    else if (type == "wav") {
+        setTune(true, true);
+    }
+    else if (type == "print") {
+        draw('printable-abcjs-container', { print: true, scale: 1.3 }, false, false);
+        let mywindow = window.open();
+        mywindow.resizeTo(1244, 1408);
+        mywindow.document.write(document.getElementById('printable-abcjs-container').innerHTML);
+        mywindow.document.close();
+        mywindow.focus();
+        mywindow.print();
+        document.getElementById('printable-abcjs-container').innerHTML = "";
+    }
 }

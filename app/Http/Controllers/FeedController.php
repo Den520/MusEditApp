@@ -8,7 +8,7 @@ class FeedController extends Controller
 {
     public function index()
     {
-        $sheets = Sheet::all();
+        $sheets = Sheet::where('is_published', true)->get();
         return view('feed.index', compact('sheets'));
     }
 

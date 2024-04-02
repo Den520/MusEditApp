@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateSheetUserTable extends Migration
+class CreateSheetUsersTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,7 +13,8 @@ class CreateSheetUserTable extends Migration
      */
     public function up()
     {
-        Schema::create('sheet_user', function (Blueprint $table) {
+        Schema::create('sheet_users', function (Blueprint $table) {
+            $table->id();
             $table->foreignId('sheet_id')->constrained('sheets')->onUpdate('cascade')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onUpdate('cascade')->onDelete('cascade');
         });
@@ -26,6 +27,6 @@ class CreateSheetUserTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('sheet_user');
+        Schema::dropIfExists('sheet_users');
     }
 }

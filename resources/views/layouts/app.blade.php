@@ -20,7 +20,7 @@
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
 
     <!-- Additional header info -->
-    @yield('header')
+    @yield('head')
 </head>
 <body>
     <div id="app">
@@ -90,9 +90,11 @@
             </div>
         </nav>
 
+        @yield('header')
         <main class="py-4">
             @yield('content')
         </main>
+        @yield('footer')
     </div>
 </body>
 </html>

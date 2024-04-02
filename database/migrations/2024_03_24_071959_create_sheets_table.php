@@ -16,7 +16,7 @@ class CreateSheetsTable extends Migration
         Schema::create('sheets', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onUpdate('cascade')->onDelete('cascade');
-            $table->string('title')->default('');
+            $table->string('title');
             $table->text('content')->nullable();
             $table->boolean('is_published')->default(0);
             $table->timestamps();
