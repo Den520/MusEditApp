@@ -618,7 +618,7 @@ function exportFile(type) {
         setTune(true, true);
     }
     else if (type == "print") {
-        draw('printable-abcjs-container', { print: true, scale: 1.3 }, false, false);
+        draw('printable-abcjs-container', { print: true, scale: 1.3, staffwidth: 1050 }, false, false);
         let mywindow = window.open();
         mywindow.resizeTo(1244, 1408);
         mywindow.document.write(document.getElementById('printable-abcjs-container').innerHTML);
